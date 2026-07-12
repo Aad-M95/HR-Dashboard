@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>India HR Dashboard — Hunter Douglas & Hillarys</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<style>
+
+:root{
+  --navy:#1F497D; --blue:#4F81BD; --red:#C0504D; --green:#9BBB59;
+  --purple:#8064A2; --teal:#4BACC6; --orange:#F79646; --neutral:#EEECE1;
+  --header:#EEECE1; --header-ink:#3a3320; --header-sub:#6b6350;
+  --ink:#2b2b2b; --muted:#6b7280; --line:#e4e7ec; --bg:#f4f6f9; --card:#ffffff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Calibri,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
+.topbar{background:var(--header);color:var(--header-ink);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ddd8c4}
+.topbar h1{font-size:19px;font-weight:700;letter-spacing:.2px;color:var(--navy)}
+.topbar .sub{font-size:12px;color:var(--header-sub);font-weight:500}
+.topbar #lastUpdated{color:var(--header-sub)}
+.masterbar{display:flex;background:var(--card);border-bottom:1px solid var(--line);padding:0 24px}
+.master-tab{padding:14px 26px;cursor:pointer;font-weight:600;color:var(--muted);border-bottom:3px solid transparent;transition:.15s}
+.master-tab:hover{color:var(--navy)}
+.master-tab.active{color:var(--navy);border-bottom-color:var(--navy)}
+.entitybar{display:flex;flex-wrap:wrap;gap:8px;padding:14px 24px 4px}
+.entity-tab{padding:8px 16px;border-radius:20px;background:#eef2f7;color:var(--navy);cursor:pointer;font-weight:600;font-size:13px;border:1px solid transparent;transition:.15s}
+.entity-tab:hover{background:#e0e8f2}
+.entity-tab.active{background:var(--navy);color:#fff}
+.subbar{display:flex;flex-wrap:wrap;gap:4px;padding:10px 24px 0;border-bottom:1px solid var(--line)}
+.sub-tab{padding:8px 14px;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent}
+.sub-tab:hover{color:var(--navy)}
+.sub-tab.active{color:var(--navy);border-bottom-color:var(--blue)}
+.filters{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;padding:16px 24px;background:#fbfcfe;border-bottom:1px solid var(--line)}
+.filt{display:flex;flex-direction:column;gap:4px;position:relative}
+.filt label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.filt input[type=month]{padding:7px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;background:#fff;min-width:150px;color:var(--ink)}
+.filt .dsel{padding:7px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;background:#fff;color:var(--ink);cursor:pointer;min-width:78px}
+.filt .dsel:hover{border-color:var(--blue)}
+.filt-reset{padding:8px 14px;background:var(--neutral);border:1px solid #ddd8c4;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px;color:var(--navy);height:36px}
+.filt-reset:hover{background:#e2ddc9}
+.ms{min-width:170px;position:relative}
+.ms-btn{padding:7px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;background:#fff;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:36px}
+.ms-btn:hover{border-color:var(--blue)}
+.ms-btn .txt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
+.ms-btn .cnt{background:var(--navy);color:#fff;border-radius:10px;font-size:11px;padding:1px 7px;font-weight:700}
+.ms-btn .car{color:var(--muted);font-size:10px}
+.ms-panel{position:absolute;top:calc(100% + 4px);left:0;z-index:50;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.14);min-width:220px;max-height:280px;overflow:auto;padding:6px}
+.ms-panel.hidden{display:none}
+.ms-opt{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:5px;cursor:pointer;font-size:13px}
+.ms-opt:hover{background:#f2f5fa}
+.ms-opt input{margin:0;cursor:pointer}
+.ms-actions{display:flex;justify-content:space-between;padding:4px 8px 6px;border-bottom:1px solid var(--line);margin-bottom:4px}
+.ms-actions a{font-size:12px;color:var(--blue);cursor:pointer;font-weight:600}
+.viewtoggle{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;height:36px}
+.viewtoggle button{padding:7px 14px;border:none;background:#fff;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted)}
+.viewtoggle button.active{background:var(--navy);color:#fff}
+.content{padding:22px 24px 60px}
+.kpirow{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:18px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px 22px;min-width:180px;flex:1;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.kpi .val{font-size:30px;font-weight:700;color:var(--navy);line-height:1}
+.kpi .lbl{font-size:12px;color:var(--muted);margin-top:6px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.kpi.accent .val{color:var(--red)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:18px}
+.chart-card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.chart-card h3{font-size:14px;color:var(--navy);margin-bottom:4px;display:flex;justify-content:space-between;align-items:center}
+.chart-card .note{font-size:11px;color:var(--muted);margin-bottom:12px}
+.chart-wrap{position:relative;height:340px}
+.chart-wrap.tall{height:380px}
+.full{grid-column:1/-1}
+.empty{color:var(--muted);font-style:italic;padding:40px;text-align:center}
+.pill{font-size:11px;background:#eef2f7;color:var(--navy);padding:2px 8px;border-radius:10px;font-weight:600}
+.hidden{display:none}
+.footer{padding:16px 24px;color:var(--muted);font-size:11px;text-align:center;border-top:1px solid var(--line);background:#fff}
+
+.loadscreen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;color:var(--muted);gap:14px}
+.spinner{width:40px;height:40px;border:4px solid #e4e7ec;border-top-color:var(--navy);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.errbox{max-width:600px;margin:40px auto;padding:24px;border:1px solid #f0c0c0;background:#fdf5f5;border-radius:10px;color:#8a2b2b}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div><h1>India HR Dashboard</h1><span class="sub">Hunter Douglas (India AP &middot; India WCP) &amp; Hillarys (India SAH)</span></div>
+  <div class="sub" id="lastUpdated"></div>
+</div>
+<div class="masterbar" id="masterbar">
+  <div class="master-tab active" data-master="manpower">Manpower Dashboard</div>
+  <div class="master-tab" data-master="attrition">Attrition Dashboard</div>
+</div>
+<div class="entitybar" id="entitybar"></div>
+<div class="subbar" id="subbar"></div>
+<div class="filters" id="filters"></div>
+<div class="content" id="content"><div class="loadscreen"><div class="spinner"></div><div>Loading latest data…</div></div></div>
+<div class="footer">
+  Headcount reconstructed from Master-Active (roster) + Attrition (exits), gated by Date-of-Hire and Termination Date &middot; Entity from Attrition Col M &middot; Grade = APAC Grade &middot; Resigned treated as Active &middot; Data from Jan 2025
+</div>
+
+<script>
+// ============================================================
+//  CONFIG — fill these two lines in (see hosting instructions)
+// ============================================================
+const SUPABASE_URL = "https://lxloupmrefsnyhhucykc.supabase.co";
+const DATA_PATH    = "/storage/v1/object/public/hr-dashboard/data.json";
+// ============================================================
+
+let DASH_DATA = null;
+
+async function loadData(){
+  try{
+    // cache-bust so a freshly uploaded file shows immediately
+    const url = SUPABASE_URL + DATA_PATH + "?t=" + Date.now();
+    const res = await fetch(url, {cache:"no-store"});
+    if(!res.ok) throw new Error("HTTP "+res.status+" fetching data.json");
+    DASH_DATA = await res.json();
+    bootDashboard();   // defined in the logic block below
+  }catch(e){
+    document.getElementById('content').innerHTML =
+      '<div class="errbox"><b>Could not load data.</b><br><br>'+
+      'Checked: <code>'+SUPABASE_URL+DATA_PATH+'</code><br><br>'+
+      String(e)+'<br><br>Verify the Supabase URL, that the <code>hr-dashboard</code> bucket is public, '+
+      'and that <code>data.json</code> exists.</div>';
+    console.error(e);
+  }
+}
+</script>
+<script>
+// ============ CONFIG ============
+const PALETTE = ['#1F497D','#4F81BD','#4BACC6','#9BBB59','#F79646','#C0504D','#8064A2','#7f9db9','#a5b592','#d99694','#b3a2c7'];
+const NAVY='#1F497D', BLUE='#4F81BD', RED='#C0504D', GREEN='#9BBB59', ORANGE='#F79646', TEAL='#4BACC6', PURPLE='#8064A2';
+
+const ENTITY_GROUPS = {
+  'India AP':['India AP'],
+  'India WCP':['India WCP'],
+  'India SAH':['India SAH'],
+  'Hunter Douglas (AP+WCP)':['India AP','India WCP'],
+  'All India':['India AP','India WCP','India SAH'],
+};
+const ENTITY_ORDER = ['India AP','India WCP','India SAH','Hunter Douglas (AP+WCP)','All India'];
+
+const MANPOWER_SUBS = [
+  {id:'hc_mom', label:'Headcount Movement (MoM)'},
+  {id:'hc_dept', label:'Department-wise'},
+  {id:'hc_grade', label:'Grade-wise'},
+  {id:'hc_tenure', label:'Tenure-wise'},
+];
+const ATTR_SUBS = [
+  {id:'overall', label:'Overall Attrition'},
+  {id:'trend6', label:'6-Month Trend'},
+  {id:'a_dept', label:'Department'},
+  {id:'a_grade', label:'Grade'},
+  {id:'a_jobcat', label:'Job Category'},
+  {id:'a_tenure', label:'Tenure in Company'},
+  {id:'a_termtype', label:'Termination Type'},
+  {id:'a_reason', label:'Termination Reason'},
+];
+const TENURE_ORDER=['Less than 1 year','1 to 2 years','2 to 5 years','5 to 10 years','10 to 20 years','More than 20 years','Unknown'];
+
+// data-field mapping for filters (roster vs exits use different keys for the same concept)
+// filter key -> {active: field on roster row, exit: field on exit row, label}
+const FILTER_DEFS = {
+  dept:    {active:'dept',   exit:'dept',   label:'Department'},
+  grade:   {active:'grade',  exit:'grade',  label:'Grade'},
+  tenure:  {active:'tbucket',exit:'tbucket',label:'Tenure'},
+  jobcat:  {active:null,     exit:'jobcat', label:'Job Category'},
+  termtype:{active:null,     exit:'vol',    label:'Termination Type'},
+  reason:  {active:null,     exit:'reason', label:'Termination Reason'},
+};
+
+// ============ STATE ============
+// filters now hold ARRAYS (multi-select). Empty array = "All".
+let state = {
+  master:'manpower',
+  entity:'India AP',
+  sub:'hc_mom',
+  filters:{ dateFrom:null, dateTo:null, dept:[], grade:[], tenure:[], jobcat:[], termtype:[], reason:[] },
+  view:'count',
+};
+let charts=[];
+let openPanel=null; // id of currently open multiselect panel
+let MONTHS = [];
+let LATEST = null;
+
+// ============ DATE HELPERS ============
+function monthEnd(y,m){ return new Date(y, m, 0); }
+function parseD(s){ return s? new Date(s+'T00:00:00'):null; }
+function ts(s){ return parseD(s).getTime(); }
+function monteEndTs(y,m){ return monthEnd(y,m).getTime(); }
+function monthKey(y,m){ return y*12+(m-1); }
+function shiftMonth(y,m,delta){ let k=monthKey(y,m)+delta; return {y:Math.floor(k/12), m:(k%12)+1}; }
+
+function activeMonths(){
+  const f=state.filters;
+  return MONTHS.filter(mo=>{
+    const me=monthEnd(mo.y,mo.m);
+    const start=new Date(mo.y,mo.m-1,1);
+    if(f.dateFrom){ if(me < parseD(f.dateFrom)) return false; }
+    if(f.dateTo){ if(start > parseD(f.dateTo)) return false; }
+    return true;
+  });
+}
+
+// ============ FILTER MATCHING (multi-select = union) ============
+function selMatch(sel, val){ return !sel || sel.length===0 || sel.includes(val); }
+
+// roster row passes the roster-applicable filters
+function passRoster(r, keys){
+  const f=state.filters;
+  for(const k of keys){
+    const def=FILTER_DEFS[k]; if(!def || !def.active) continue;
+    if(!selMatch(f[k], r[def.active])) return false;
+  }
+  return true;
+}
+// exit row passes the exit-applicable filters
+function passExit(x, keys){
+  const f=state.filters;
+  for(const k of keys){
+    const def=FILTER_DEFS[k]; if(!def) continue;
+    if(!selMatch(f[k], x[def.exit])) return false;
+  }
+  return true;
+}
+
+// ============ HEADCOUNT ENGINE ============
+// roster-applicable filter keys for HC (only those that exist on roster: dept, grade, tenure)
+function hcFilterKeys(){ return ['dept','grade','tenure'].filter(k=>FILTER_DEFS[k].active); }
+
+function headcount(grp, y, m, keysOverride){
+  const me=monteEndTs(y,m);
+  const keys = keysOverride || hcFilterKeys();
+  let c=0;
+  for(const a of DASH_DATA.active){
+    if(!grp.includes(a.ent)) continue;
+    if(a.doj && ts(a.doj)<=me && passRoster(a,keys)) c++;
+  }
+  for(const e of DASH_DATA.exits){
+    if(!grp.includes(e.ent)) continue;
+    if(e.term && ts(e.term)>me && (!e.doh || ts(e.doh)<=me)){
+      // apply the roster-equivalent filters to exited-but-active people
+      let ok=true;
+      for(const k of keys){ const def=FILTER_DEFS[k]; if(def&&def.exit && !selMatch(state.filters[k], e[def.exit])){ ok=false;break; } }
+      if(ok) c++;
+    }
+  }
+  return c;
+}
+
+// exits within window with all attrition filters applied
+function exitsInWindow(grp, sY,sM, eY,eM, keys){
+  const s=new Date(sY,sM-1,1).getTime();
+  const e=monthEnd(eY,eM).getTime();
+  const fkeys = keys || ['grade','jobcat','tenure','termtype','reason'];
+  return DASH_DATA.exits.filter(x=>{
+    if(!grp.includes(x.ent)) return false;
+    if(!x.term) return false;
+    const t=ts(x.term); if(t<s||t>e) return false;
+    return passExit(x, fkeys);
+  });
+}
+
+// ============ CASCADING OPTION COMPUTATION ============
+// For a given filter key, compute the options that remain available given the CURRENT entity,
+// date range, and ALL OTHER active filters (excluding this key itself).
+function availableOptions(key){
+  const grp=ENTITY_GROUPS[state.entity];
+  const def=FILTER_DEFS[key];
+  const mos=activeMonths();
+  const set=new Set();
+
+  if(state.master==='manpower'){
+    // options come from the roster snapshot at the latest month in range,
+    // plus exited-but-active in that month, filtered by every OTHER roster filter
+    const lastMo = mos[mos.length-1]||MONTHS[MONTHS.length-1];
+    const otherKeys = hcFilterKeys().filter(k=>k!==key);
+    const me=monteEndTs(lastMo.y,lastMo.m);
+    const rows=[];
+    for(const a of DASH_DATA.active){ if(grp.includes(a.ent)&&a.doj&&ts(a.doj)<=me) rows.push(a); }
+    for(const e of DASH_DATA.exits){ if(grp.includes(e.ent)&&e.term&&ts(e.term)>me&&(!e.doh||ts(e.doh)<=me)) rows.push(e); }
+    for(const r of rows){
+      if(!passRoster(r,otherKeys)) continue;
+      const val = def.active? r[def.active] : (def.exit? r[def.exit]:null);
+      if(val!=null && val!=='') set.add(val);
+    }
+  } else {
+    // attrition: options from exits in the date window, filtered by every OTHER attrition filter
+    const first=mos[0]||MONTHS[0], last=mos[mos.length-1]||MONTHS[MONTHS.length-1];
+    const allKeys=['grade','jobcat','tenure','termtype','reason'];
+    const otherKeys=allKeys.filter(k=>k!==key);
+    const ex=exitsInWindow(grp, first.y,first.m, last.y,last.m, otherKeys);
+    for(const x of ex){ const v=x[def.exit]; if(v!=null&&v!=='') set.add(v); }
+  }
+  // order
+  let arr=[...set];
+  if(key==='grade') arr.sort(gradeSort);
+  else if(key==='tenure') arr.sort((a,b)=>TENURE_ORDER.indexOf(a)-TENURE_ORDER.indexOf(b));
+  else arr.sort();
+  return arr;
+}
+
+// after cascading changes, drop any selected values no longer available
+function pruneSelections(){
+  const keys = state.master==='manpower'? hcFilterKeys() : ['grade','jobcat','tenure','termtype','reason'];
+  keys.forEach(k=>{
+    if(!state.filters[k] || state.filters[k].length===0) return;
+    const avail=new Set(availableOptions(k));
+    state.filters[k]=state.filters[k].filter(v=>avail.has(v));
+  });
+}
+
+// ============ UI: entity/sub bars ============
+function renderEntityBar(){
+  const bar=document.getElementById('entitybar'); bar.innerHTML='';
+  ENTITY_ORDER.forEach(en=>{
+    const d=document.createElement('div');
+    d.className='entity-tab'+(en===state.entity?' active':'');
+    d.textContent=en;
+    d.onclick=()=>{ state.entity=en; render(); };
+    bar.appendChild(d);
+  });
+}
+function renderSubBar(){
+  const bar=document.getElementById('subbar'); bar.innerHTML='';
+  const subs = state.master==='manpower'?MANPOWER_SUBS:ATTR_SUBS;
+  if(!subs.find(s=>s.id===state.sub)) state.sub=subs[0].id;
+  subs.forEach(s=>{
+    const d=document.createElement('div');
+    d.className='sub-tab'+(s.id===state.sub?' active':'');
+    d.textContent=s.label;
+    d.onclick=()=>{ state.sub=s.id; render(); };
+    bar.appendChild(d);
+  });
+}
+function esc(s){ return String(s).replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+function gradeSort(a,b){
+  const ga=/^G(\d+)$/.exec(a), gb=/^G(\d+)$/.exec(b);
+  if(ga&&gb) return +ga[1]-+gb[1];
+  if(ga) return -1; if(gb) return 1; return String(a).localeCompare(String(b));
+}
+
+// ============ UI: FILTER BAR (multi-select + cascading) ============
+function msWidget(key){
+  const def=FILTER_DEFS[key];
+  const opts=availableOptions(key);
+  const sel=state.filters[key]||[];
+  const label = sel.length===0? 'All' : (sel.length===1? sel[0] : sel.length+' selected');
+  let panel = `<div class="ms-actions"><a data-act="all">Select all</a><a data-act="none">Clear</a></div>`;
+  panel += opts.map(o=>`<label class="ms-opt"><input type="checkbox" value="${esc(o)}" ${sel.includes(o)?'checked':''}> ${esc(o)}</label>`).join('') || '<div class="ms-opt" style="color:#999">No options</div>';
+  return `<div class="filt"><label>${def.label}</label>
+    <div class="ms" data-key="${key}">
+      <div class="ms-btn"><span class="txt">${esc(label)}</span>
+        ${sel.length? `<span class="cnt">${sel.length}</span>`:''}<span class="car">&#9662;</span></div>
+      <div class="ms-panel hidden">${panel}</div>
+    </div></div>`;
+}
+function monthInput(iso){ if(!iso) return ''; return iso.slice(0,7); }
+const MONTH_NAMES=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function dateSelect(key,label,iso){
+  const y = iso? +iso.slice(0,4) : null;
+  const m = iso? +iso.slice(5,7) : null;
+  // years present in the data range
+  const years=[...new Set(MONTHS.map(mo=>mo.y))].sort();
+  const yOpts = ['<option value="">Year</option>'].concat(years.map(yy=>`<option value="${yy}" ${yy===y?'selected':''}>${yy}</option>`)).join('');
+  const mOpts = ['<option value="">Month</option>'].concat(MONTH_NAMES.map((nm,i)=>`<option value="${i+1}" ${(i+1)===m?'selected':''}>${nm}</option>`)).join('');
+  return `<div class="filt"><label>${label}</label>
+    <div style="display:flex;gap:6px">
+      <select data-df="${key}" data-part="m" class="dsel">${mOpts}</select>
+      <select data-df="${key}" data-part="y" class="dsel">${yOpts}</select>
+    </div></div>`;
+}
+
+function renderFilters(){
+  const box=document.getElementById('filters'); const f=state.filters;
+  let html='';
+  // date range as explicit Year + Month selects (native month input hides 2025 in some browsers)
+  html+=dateSelect('dateFrom','Date From', f.dateFrom);
+  html+=dateSelect('dateTo','Date To', f.dateTo);
+
+  const keys = state.master==='manpower'? ['dept','grade','tenure'] : ['grade','jobcat','tenure','termtype','reason'];
+  keys.forEach(k=>{ html+=msWidget(k); });
+
+  html+=`<button class="filt-reset" id="resetBtn">Reset filters</button>`;
+  if(state.master==='attrition' && state.sub!=='trend6'){
+    html+=`<div class="filt"><label>View</label><div class="viewtoggle">
+      <button data-v="count" class="${state.view==='count'?'active':''}">Count</button>
+      <button data-v="pct" class="${state.view==='pct'?'active':''}"># %</button></div></div>`;
+  }
+  box.innerHTML=html;
+
+  // date handlers (year + month selects)
+  box.querySelectorAll('select[data-df]').forEach(el=>{
+    el.onchange=()=>{
+      const key=el.dataset.df;      // dateFrom / dateTo
+      const part=el.dataset.part;   // y / m
+      const cur=state.filters[key];
+      let y = cur? +cur.slice(0,4) : null;
+      let m = cur? +cur.slice(5,7) : null;
+      if(part==='y') y = el.value? +el.value : null;
+      if(part==='m') m = el.value? +el.value : null;
+      if(y && m){
+        state.filters[key] = `${y}-${String(m).padStart(2,'0')}-01`;
+      } else if(!y && !m){
+        state.filters[key] = null;
+      } else {
+        // one part chosen: default the other so the filter is usable
+        if(y && !m) m = (key==='dateFrom'?1:12);
+        if(m && !y) y = 2025;
+        state.filters[key] = `${y}-${String(m).padStart(2,'0')}-01`;
+      }
+      render();
+    };
+  });
+  // multiselect handlers
+  box.querySelectorAll('.ms').forEach(ms=>{
+    const key=ms.dataset.key;
+    const btn=ms.querySelector('.ms-btn'); const panel=ms.querySelector('.ms-panel');
+    btn.onclick=(e)=>{ e.stopPropagation();
+      const isOpen=!panel.classList.contains('hidden');
+      // close others
+      document.querySelectorAll('.ms-panel').forEach(p=>p.classList.add('hidden'));
+      if(!isOpen){ panel.classList.remove('hidden'); openPanel=key; } else openPanel=null;
+    };
+    panel.onclick=(e)=>e.stopPropagation();
+    panel.querySelectorAll('input[type=checkbox]').forEach(cb=>{
+      cb.onchange=()=>{
+        const cur=new Set(state.filters[key]||[]);
+        if(cb.checked) cur.add(cb.value); else cur.delete(cb.value);
+        state.filters[key]=[...cur];
+        pruneSelections();
+        render(); // re-render keeps panel state via openPanel
+      };
+    });
+    panel.querySelectorAll('.ms-actions a').forEach(a=>{
+      a.onclick=(e)=>{ e.stopPropagation();
+        if(a.dataset.act==='all') state.filters[key]=availableOptions(key).slice();
+        else state.filters[key]=[];
+        pruneSelections(); render();
+      };
+    });
+  });
+  const rb=document.getElementById('resetBtn');
+  if(rb) rb.onclick=()=>{ state.filters={dateFrom:null,dateTo:null,dept:[],grade:[],tenure:[],jobcat:[],termtype:[],reason:[]}; openPanel=null; render(); };
+  box.querySelectorAll('.viewtoggle button').forEach(b=>{ b.onclick=()=>{ state.view=b.dataset.v; render(); }; });
+
+  // reopen a panel if it was open before re-render
+  if(openPanel){
+    const ms=box.querySelector(`.ms[data-key="${openPanel}"]`);
+    if(ms) ms.querySelector('.ms-panel').classList.remove('hidden');
+  }
+}
+// close panels on outside click
+document.addEventListener('click',()=>{ document.querySelectorAll('.ms-panel').forEach(p=>p.classList.add('hidden')); openPanel=null; });
+
+function filterNote(){
+  const f=state.filters; const parts=[];
+  const show=(k,lbl)=>{ if(f[k]&&f[k].length) parts.push(lbl+': '+(f[k].length<=2?f[k].join(', '):f[k].length+' sel')); };
+  if(state.master==='manpower'){ show('dept','Dept'); show('grade','Grade'); show('tenure','Tenure'); }
+  else { show('grade','Grade'); show('jobcat','JobCat'); show('tenure','Tenure'); show('termtype','Type'); show('reason','Reason'); }
+  if(f.dateFrom)parts.push('From '+f.dateFrom.slice(0,7));
+  if(f.dateTo)parts.push('To '+f.dateTo.slice(0,7));
+  return parts.length? ' &middot; '+parts.join(' &middot; '):'';
+}
+
+// ============ CHART HELPERS ============
+function destroyCharts(){ charts.forEach(c=>c.destroy()); charts=[]; }
+function dl(opts){ return Object.assign({color:'#333',font:{size:11,weight:'600'}},opts||{}); }
+function baseOpts(extra={}){
+  const o={ responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{labels:{font:{size:12}}}, tooltip:{}, datalabels:{display:false} },
+    scales:{ y:{beginAtZero:true,grid:{color:'#eef1f5'},ticks:{font:{size:11}}},
+             x:{grid:{display:false},ticks:{font:{size:11}}} } };
+  return deepMerge(o, extra);
+}
+function deepMerge(a,b){ for(const k in b){ if(b[k]&&typeof b[k]==='object'&&!Array.isArray(b[k])){ a[k]=deepMerge(a[k]||{},b[k]); } else a[k]=b[k]; } return a; }
+// Compute a "nice" axis maximum that sits one gridline ABOVE the peak value,
+// so the top data label is never clipped at the chart edge.
+function axisMax(values){
+  const peak = Math.max(0, ...values.filter(v=>typeof v==='number' && isFinite(v)));
+  if(peak<=0) return 1;
+  // pick a nice step based on the magnitude of the peak
+  const mag = Math.pow(10, Math.floor(Math.log10(peak)));
+  const norm = peak/mag; // 1..10
+  let step;
+  if(norm<=1) step=0.2*mag;
+  else if(norm<=2) step=0.5*mag;
+  else if(norm<=5) step=1*mag;
+  else step=2*mag;
+  // round peak up to the next step, then add one more full step of headroom
+  const roundedUp = Math.ceil(peak/step)*step;
+  const withHeadroom = (roundedUp===peak) ? roundedUp+step : roundedUp;
+  return +withHeadroom.toFixed(6);
+}
+function mkCanvas(parent){ const c=document.createElement('canvas'); parent.appendChild(c); return c; }
+function card(title,note){
+  const d=document.createElement('div'); d.className='chart-card';
+  d.innerHTML=`<h3>${title}</h3>${note?`<div class="note">${note}</div>`:''}<div class="chart-wrap"></div>`;
+  return d;
+}
+
+// ============ MAIN RENDER ============
+function render(){
+  pruneSelections();
+  document.querySelectorAll('.master-tab').forEach(t=>t.classList.toggle('active',t.dataset.master===state.master));
+  renderEntityBar(); renderSubBar(); renderFilters();
+  destroyCharts();
+  const c=document.getElementById('content'); c.innerHTML='';
+  document.getElementById('lastUpdated').textContent='Last updated: '+fmtDate(LATEST);
+  if(state.master==='manpower') renderManpowerImpl(c); else renderAttritionImpl(c);
+}
+function fmtDate(iso){ const d=parseD(iso); return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); }
+
+let renderManpowerImpl=null, renderAttritionImpl=null;
+
+// ============ MANPOWER RENDERERS ============
+renderManpowerImpl = function(c){
+  const grp = ENTITY_GROUPS[state.entity];
+  const mos = activeMonths();
+  const lastMo = mos[mos.length-1]||MONTHS[MONTHS.length-1];
+  const firstMo = mos[0]||MONTHS[0];
+  const hcNow = headcount(grp,lastMo.y,lastMo.m);
+  const hcStart = headcount(grp,firstMo.y,firstMo.m);
+
+  const kpi=document.createElement('div'); kpi.className='kpirow';
+  kpi.innerHTML=`
+    <div class="kpi"><div class="val">${hcNow}</div><div class="lbl">Headcount &middot; ${lastMo.label}</div></div>
+    <div class="kpi"><div class="val">${(hcNow-hcStart>=0?'+':'')+(hcNow-hcStart)}</div><div class="lbl">Net change vs ${firstMo.label}</div></div>
+    <div class="kpi"><div class="val">${state.entity}</div><div class="lbl">Entity view</div></div>`;
+  c.appendChild(kpi);
+  const grid=document.createElement('div'); grid.className='grid'; c.appendChild(grid);
+
+  if(state.sub==='hc_mom'){
+    const labels=mos.map(m=>m.label);
+    const series=mos.map(m=>headcount(grp,m.y,m.m));
+    const cc=card('Headcount Movement — Month on Month','Reconstructed month-end headcount'+filterNote());
+    cc.classList.add('full'); grid.appendChild(cc);
+    const cv=mkCanvas(cc.querySelector('.chart-wrap'));
+    charts.push(new Chart(cv,{type:'line',data:{labels,datasets:[{label:'Headcount',data:series,
+      borderColor:NAVY,backgroundColor:'rgba(31,73,125,.10)',fill:true,tension:.3,pointRadius:3,pointBackgroundColor:NAVY,borderWidth:2.5}]},
+      options:baseOpts({plugins:{legend:{display:false},
+        datalabels:dl({display:true,align:'top',anchor:'end',color:NAVY})},
+        scales:{y:{beginAtZero:true,max:axisMax(series),grid:{color:'#eef1f5'}}}}),plugins:[ChartDataLabels]}));
+
+    if(grp.length>1){
+      const cc2=card('Headcount by Entity — Month on Month','Stacked contribution'+filterNote());
+      cc2.classList.add('full'); grid.appendChild(cc2);
+      const cv2=mkCanvas(cc2.querySelector('.chart-wrap'));
+      const ds=grp.map((en,i)=>({label:en,data:mos.map(m=>headcount([en],m.y,m.m)),backgroundColor:PALETTE[i],stack:'s'}));
+      const stackTotals=mos.map((m,mi)=>ds.reduce((s,d)=>s+d.data[mi],0));
+      charts.push(new Chart(cv2,{type:'bar',data:{labels,datasets:ds},
+        options:baseOpts({scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true,max:axisMax(stackTotals),grid:{color:'#eef1f5'}}},
+          plugins:{datalabels:dl({display:ctx=>ctx.dataset.data[ctx.dataIndex]>0,color:'#fff'})}}),plugins:[ChartDataLabels]}));
+    }
+  }
+  else if(state.sub==='hc_dept') catChart(grid,'Department-wise Headcount', headcountByDim(grp,'dept',lastMo),lastMo);
+  else if(state.sub==='hc_grade') catChart(grid,'Grade-wise Headcount', headcountByDim(grp,'grade',lastMo),lastMo, gradeSort);
+  else if(state.sub==='hc_tenure'){
+    const map=headcountByDim(grp,'tbucket',lastMo);
+    const ordered={}; TENURE_ORDER.forEach(t=>{ if(map[t]!=null) ordered[t]=map[t]; });
+    catChart(grid,'Tenure-wise Headcount', ordered,lastMo, null, true);
+  }
+};
+
+function headcountByDim(grp,dimKey,lastMo){
+  const me=monteEndTs(lastMo.y,lastMo.m);
+  const map={}; const rows=[];
+  for(const a of DASH_DATA.active){ if(grp.includes(a.ent)&&a.doj&&ts(a.doj)<=me) rows.push(a); }
+  for(const e of DASH_DATA.exits){ if(grp.includes(e.ent)&&e.term&&ts(e.term)>me&&(!e.doh||ts(e.doh)<=me)) rows.push(e); }
+  const keys=hcFilterKeys();
+  for(const r of rows){ if(!passRoster(r,keys)) continue; const v=r[dimKey]||'NA'; map[v]=(map[v]||0)+1; }
+  return map;
+}
+function catChart(grid,title,map,lastMo,sortFn,keepOrder){
+  let entries=Object.entries(map);
+  if(!keepOrder){ if(sortFn) entries.sort((a,b)=>sortFn(a[0],b[0])); else entries.sort((a,b)=>b[1]-a[1]); }
+  const labels=entries.map(e=>e[0]), vals=entries.map(e=>e[1]);
+  const total=vals.reduce((x,y)=>x+y,0);
+  const cc=card(title, `Snapshot as of ${lastMo.label} &middot; Total ${total}`+filterNote());
+  cc.classList.add('full'); grid.appendChild(cc);
+  const cv=mkCanvas(cc.querySelector('.chart-wrap'));
+  charts.push(new Chart(cv,{type:'bar',data:{labels,datasets:[{label:'Headcount',data:vals,
+    backgroundColor:labels.map((_,i)=>PALETTE[i%PALETTE.length])}]},
+    options:baseOpts({indexAxis:'y',plugins:{legend:{display:false},
+      datalabels:dl({display:true,anchor:'end',align:'end',color:'#333'})},
+      scales:{x:{beginAtZero:true,max:axisMax(vals),grid:{color:'#eef1f5'}},y:{grid:{display:false}}}}),plugins:[ChartDataLabels]}));
+  const cc2=card(title+' — Share', `Distribution as of ${lastMo.label}`); grid.appendChild(cc2);
+  const cv2=mkCanvas(cc2.querySelector('.chart-wrap'));
+  charts.push(new Chart(cv2,{type:'doughnut',data:{labels,datasets:[{data:vals,
+    backgroundColor:labels.map((_,i)=>PALETTE[i%PALETTE.length])}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11}}},
+      datalabels:dl({color:'#fff',formatter:(v)=> total? Math.round(v/total*100)+'%':'' ,display:ctx=>ctx.dataset.data[ctx.dataIndex]/total>=0.04})}},plugins:[ChartDataLabels]}));
+}
+
+// ============ ATTRITION RENDERERS ============
+renderAttritionImpl = function(c){
+  const grp = ENTITY_GROUPS[state.entity];
+  const mos = activeMonths();
+  const first=mos[0]||MONTHS[0], last=mos[mos.length-1]||MONTHS[MONTHS.length-1];
+
+  if(state.sub==='overall'){ attrOverall(c,grp,mos,first,last); return; }
+  if(state.sub==='trend6'){ attrTrend6(c,grp); return; }
+
+  const winExits = exitsInWindow(grp, first.y,first.m, last.y,last.m);
+  const totalExits = winExits.length;
+  const grid=document.createElement('div'); grid.className='grid';
+  const kpi=document.createElement('div'); kpi.className='kpirow';
+  kpi.innerHTML=`<div class="kpi accent"><div class="val">${totalExits}</div><div class="lbl">Total Exits &middot; ${first.label}–${last.label}</div></div>
+    <div class="kpi"><div class="val">${state.entity}</div><div class="lbl">Entity view</div></div>
+    <div class="kpi"><div class="val">${state.view==='pct'?'% of exits':'Count'}</div><div class="lbl">View mode</div></div>`;
+  c.appendChild(kpi); c.appendChild(grid);
+  if(totalExits===0){ grid.innerHTML='<div class="empty full">No exits match the current filters.</div>'; return; }
+
+  const dimMap={ a_dept:'dept', a_grade:'grade', a_jobcat:'jobcat', a_tenure:'tbucket', a_reason:'reason' };
+  if(state.sub==='a_termtype'){
+    attrCatChart(grid, winExits, 'vol', 'Termination Type — Voluntary vs Involuntary (Col CE)', totalExits, ['Voluntary','Involuntary','NA']);
+    attrCatChart(grid, winExits, 'regret', 'Termination Type — Regrettable vs Non-Regrettable (Col CG)', totalExits, ['Regrettable','Non-Regrettable','NA']);
+  } else {
+    const dim=dimMap[state.sub];
+    let order=null; if(dim==='tbucket') order=TENURE_ORDER; if(dim==='grade') order='grade';
+    attrCatChart(grid, winExits, dim, subLabel()+' (exits)', totalExits, order);
+  }
+};
+function subLabel(){ return (ATTR_SUBS.find(s=>s.id===state.sub)||{}).label||''; }
+
+function attrCatChart(grid, exits, key, title, totalExits, order){
+  const map={}; exits.forEach(e=>{ const v=e[key]||'NA'; map[v]=(map[v]||0)+1; });
+  let entries=Object.entries(map);
+  if(order==='grade') entries.sort((a,b)=>gradeSort(a[0],b[0]));
+  else if(Array.isArray(order)){ const idx=v=>{const i=order.indexOf(v);return i<0?999:i;}; entries.sort((a,b)=>idx(a[0])-idx(b[0])); }
+  else entries.sort((a,b)=>b[1]-a[1]);
+  const labels=entries.map(e=>e[0]); const raw=entries.map(e=>e[1]);
+  const isPct=state.view==='pct';
+  const vals= isPct? raw.map(v=>+(v/totalExits*100).toFixed(1)) : raw;
+  const unit= isPct?'%':'';
+  const cc=card(title, (isPct?`% of ${totalExits} total exits in range`:`No. of exits &middot; Total ${totalExits}`)+filterNote());
+  cc.classList.add('full'); grid.appendChild(cc);
+  const cv=mkCanvas(cc.querySelector('.chart-wrap'));
+  charts.push(new Chart(cv,{type:'bar',data:{labels,datasets:[{label:isPct?'% of exits':'Exits',data:vals,
+    backgroundColor:labels.map((_,i)=>PALETTE[i%PALETTE.length])}]},
+    options:baseOpts({indexAxis:'y',plugins:{legend:{display:false},
+      datalabels:dl({display:true,anchor:'end',align:'end',color:'#333',formatter:v=>v+unit}),
+      tooltip:{callbacks:{label:ctx=>` ${ctx.parsed.x}${unit}`+(isPct?` (${raw[ctx.dataIndex]} exits)`:'')}}},
+      scales:{x:{beginAtZero:true,max:axisMax(vals),grid:{color:'#eef1f5'},ticks:{callback:v=>v+unit}},y:{grid:{display:false}}}}),plugins:[ChartDataLabels]}));
+  const cc2=card(title.split('—')[0].trim()+' — Share', 'Distribution of exits'); grid.appendChild(cc2);
+  const cv2=mkCanvas(cc2.querySelector('.chart-wrap'));
+  charts.push(new Chart(cv2,{type:'pie',data:{labels,datasets:[{data:raw,
+    backgroundColor:labels.map((_,i)=>PALETTE[i%PALETTE.length])}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11}}},
+      datalabels:dl({color:'#fff',formatter:v=>Math.round(v/totalExits*100)+'%',display:ctx=>ctx.dataset.data[ctx.dataIndex]/totalExits>=0.04}),
+      tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.parsed} (${(ctx.parsed/totalExits*100).toFixed(1)}%)`}}}},plugins:[ChartDataLabels]}));
+}
+
+function attrOverall(c,grp,mos,first,last){
+  const winExits = exitsInWindow(grp, first.y,first.m, last.y,last.m);
+  const totalExits=winExits.length;
+  const hcStart=headcount(grp,first.y,first.m);
+  const hcEnd=headcount(grp,last.y,last.m);
+  const avg=(hcStart+hcEnd)/2;
+  const attr= avg? (totalExits/avg*100):0;
+  const kpi=document.createElement('div'); kpi.className='kpirow';
+  kpi.innerHTML=`
+    <div class="kpi accent"><div class="val">${attr.toFixed(1)}%</div><div class="lbl">Attrition &middot; ${first.label}–${last.label}</div></div>
+    <div class="kpi"><div class="val">${totalExits}</div><div class="lbl">Total Exits in range</div></div>
+    <div class="kpi"><div class="val">${avg.toFixed(0)}</div><div class="lbl">Avg Headcount (${hcStart}&rarr;${hcEnd})</div></div>`;
+  c.appendChild(kpi);
+  const grid=document.createElement('div'); grid.className='grid'; c.appendChild(grid);
+
+  const labels=mos.map(m=>m.label);
+  const isPct=state.view==='pct';
+  // per-month exits (filtered)
+  const exMonthly=mos.map(m=> exitsInWindow(grp,m.y,m.m,m.y,m.m).length);
+  let data, title, note, unit='';
+  if(isPct){
+    // monthly attrition % = month exits / avg(month-start HC, month-end HC); start HC = prior month-end
+    data=mos.map((m,i)=>{
+      const prev=shiftMonth(m.y,m.m,-1);
+      const hcS=headcount(grp,prev.y,prev.m);
+      const hcE=headcount(grp,m.y,m.m);
+      const a=(hcS+hcE)/2;
+      return a? +(exMonthly[i]/a*100).toFixed(1):0;
+    });
+    title='Monthly Attrition %'; note='Exits in month &divide; average of month start &amp; end headcount'+filterNote(); unit='%';
+  } else {
+    data=exMonthly; title='Monthly Exits'; note='Total exits per month'+filterNote();
+  }
+  const cc=card(title, note); cc.classList.add('full'); grid.appendChild(cc);
+  const cv=mkCanvas(cc.querySelector('.chart-wrap'));
+  charts.push(new Chart(cv,{type:'bar',data:{labels,datasets:[{label:title,data:data,backgroundColor:RED}]},
+    options:baseOpts({plugins:{legend:{display:false},
+      datalabels:dl({display:true,anchor:'end',align:'top',color:RED,formatter:v=>v+unit}),
+      tooltip:{callbacks:{label:ctx=>` ${ctx.parsed.y}${unit}`}}},
+      scales:{y:{beginAtZero:true,max:axisMax(data),grid:{color:'#eef1f5'},ticks:{callback:v=>v+unit}},x:{grid:{display:false}}}}),plugins:[ChartDataLabels]}));
+}
+
+function attrTrend6(c,grp){
+  const af={ grade:state.filters.grade, tenure:state.filters.tenure }; // roster-applicable for HC
+  const pts=[];
+  MONTHS.forEach(mo=>{
+    const start=shiftMonth(mo.y,mo.m,-5);
+    if(start.y<2025) return;
+    const ex=exitsInWindow(grp,start.y,start.m,mo.y,mo.m).length;
+    const h6=shiftMonth(mo.y,mo.m,-6);
+    const hcOld=headcount(grp,h6.y,h6.m);
+    const hcNow=headcount(grp,mo.y,mo.m);
+    const avg=(hcOld+hcNow)/2;
+    pts.push({label:mo.label, pct: avg? +(ex/avg*100).toFixed(1):0, ex, avg:avg.toFixed(0)});
+  });
+  const grid=document.createElement('div'); grid.className='grid';
+  const latest=pts[pts.length-1];
+  if(latest){
+    const kpi=document.createElement('div'); kpi.className='kpirow';
+    kpi.innerHTML=`<div class="kpi accent"><div class="val">${latest.pct}%</div><div class="lbl">Latest 6-mo attrition &middot; ${latest.label}</div></div>
+      <div class="kpi"><div class="val">${latest.ex}</div><div class="lbl">Exits in trailing 6 mo</div></div>
+      <div class="kpi"><div class="val">${latest.avg}</div><div class="lbl">Avg HC (6mo ago vs now)</div></div>`;
+    c.appendChild(kpi);
+  }
+  c.appendChild(grid);
+  const cc=card('6-Month Attrition Trend', 'Each point = trailing-6-month exits &divide; average of headcount 6 months prior and current month'+filterNote());
+  cc.classList.add('full'); grid.appendChild(cc);
+  const wrap=cc.querySelector('.chart-wrap'); wrap.classList.add('tall');
+  const cv=mkCanvas(wrap);
+  charts.push(new Chart(cv,{type:'line',data:{labels:pts.map(p=>p.label),datasets:[{label:'6-mo Attrition %',
+    data:pts.map(p=>p.pct),borderColor:NAVY,backgroundColor:'rgba(79,129,189,.15)',fill:true,tension:.35,
+    pointRadius:4,pointBackgroundColor:NAVY,borderWidth:2.5}]},
+    options:baseOpts({plugins:{legend:{display:false},
+      datalabels:dl({display:true,align:'top',anchor:'end',color:NAVY,formatter:v=>v+'%'}),
+      tooltip:{callbacks:{label:ctx=>` ${ctx.parsed.y}%  (exits ${pts[ctx.dataIndex].ex}, avg HC ${pts[ctx.dataIndex].avg})`}}},
+      scales:{y:{beginAtZero:true,max:axisMax(pts.map(p=>p.pct)),grid:{color:'#eef1f5'},ticks:{callback:v=>v+'%'}},x:{grid:{display:false}}}}),plugins:[ChartDataLabels]}));
+}
+
+// ============ INIT (hosted: runs after data fetch) ============
+function bootDashboard(){
+  MONTHS = DASH_DATA.months;
+  LATEST = DASH_DATA.latest;
+  document.querySelectorAll('.master-tab').forEach(t=>{
+    t.onclick=()=>{ state.master=t.dataset.master; state.sub= state.master==='manpower'?'hc_mom':'overall'; openPanel=null; render(); };
+  });
+  render();
+}
+
+</script>
+<script>loadData();</script>
+</body>
+</html>
