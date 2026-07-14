@@ -379,7 +379,7 @@ function renderFilters(){
   html+=dateSelect('dateFrom','Date From', f.dateFrom);
   html+=dateSelect('dateTo','Date To', f.dateTo);
 
-  const keys = state.master==='manpower'? ['dept','grade','tenure'] : ['grade','jobcat','tenure','termtype','reason'];
+  const keys = state.master==='manpower'? ['dept','grade','jobcat','tenure'] : ['grade','jobcat','tenure','termtype','reason'];
   keys.forEach(k=>{ html+=msWidget(k); });
 
   html+=`<button class="filt-reset" id="resetBtn">Reset filters</button>`;
