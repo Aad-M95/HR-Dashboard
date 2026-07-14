@@ -163,7 +163,7 @@ const FILTER_DEFS = {
   dept:    {active:'dept',   exit:'dept',   label:'Department'},
   grade:   {active:'grade',  exit:'grade',  label:'Grade'},
   tenure:  {active:'tbucket',exit:'tbucket',label:'Tenure'},
-  jobcat:  {active:null,     exit:'jobcat', label:'Job Category'},
+  jobcat:  {active:'jobcat', exit:'jobcat', label:'Job Category'},
   termtype:{active:null,     exit:'vol',    label:'Termination Type'},
   reason:  {active:null,     exit:'reason', label:'Termination Reason'},
 };
@@ -224,8 +224,10 @@ function passExit(x, keys){
 }
 
 // ============ HEADCOUNT ENGINE ============
-// roster-applicable filter keys for HC (only those that exist on roster: dept, grade, tenure)
-function hcFilterKeys(){ return ['dept','grade','tenure'].filter(k=>FILTER_DEFS[k].active); }
+// roster-applicable filter keys for HC in the Manpower dashboard (fields that exist on the roster)
+function hcFilterKeys(){ return ['dept','grade','tenure','jobcat'].filter(k=>FILTER_DEFS[k].active); }
+// roster-applicable filter keys for the Attrition denominator (attrition filters that also exist on the roster)
+function attrHcKeys(){ return ['grade','tenure','jobcat']; }
 
 function headcount(grp, y, m, keysOverride){
   const me=monteEndTs(y,m);
@@ -653,8 +655,8 @@ function attrCatChart(grid, exits, key, title, totalExits, order){
 function attrOverall(c,grp,mos,first,last){
   const winExits = exitsInWindow(grp, first.y,first.m, last.y,last.m);
   const totalExits=winExits.length;
-  const hcStart=headcount(grp,first.y,first.m);
-  const hcEnd=headcount(grp,last.y,last.m);
+  const hcStart=headcount(grp,first.y,first.m,attrHcKeys());
+  const hcEnd=headcount(grp,last.y,last.m,attrHcKeys());
   const avg=(hcStart+hcEnd)/2;
   const attr= avg? (totalExits/avg*100):0;
   const kpi=document.createElement('div'); kpi.className='kpirow';
@@ -674,8 +676,8 @@ function attrOverall(c,grp,mos,first,last){
     // monthly attrition % = month exits / avg(month-start HC, month-end HC); start HC = prior month-end
     data=mos.map((m,i)=>{
       const prev=shiftMonth(m.y,m.m,-1);
-      const hcS=headcount(grp,prev.y,prev.m);
-      const hcE=headcount(grp,m.y,m.m);
+      const hcS=headcount(grp,prev.y,prev.m,attrHcKeys());
+      const hcE=headcount(grp,m.y,m.m,attrHcKeys());
       const a=(hcS+hcE)/2;
       return a? +(exMonthly[i]/a*100).toFixed(1):0;
     });
@@ -693,15 +695,14 @@ function attrOverall(c,grp,mos,first,last){
 }
 
 function attrTrend6(c,grp){
-  const af={ grade:state.filters.grade, tenure:state.filters.tenure }; // roster-applicable for HC
   const pts=[];
   MONTHS.forEach(mo=>{
     const start=shiftMonth(mo.y,mo.m,-5);
     if(start.y<2025) return;
     const ex=exitsInWindow(grp,start.y,start.m,mo.y,mo.m).length;
     const h6=shiftMonth(mo.y,mo.m,-6);
-    const hcOld=headcount(grp,h6.y,h6.m);
-    const hcNow=headcount(grp,mo.y,mo.m);
+    const hcOld=headcount(grp,h6.y,h6.m,attrHcKeys());
+    const hcNow=headcount(grp,mo.y,mo.m,attrHcKeys());
     const avg=(hcOld+hcNow)/2;
     pts.push({label:mo.label, pct: avg? +(ex/avg*100).toFixed(1):0, ex, avg:avg.toFixed(0)});
   });
